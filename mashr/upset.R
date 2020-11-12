@@ -1,50 +1,44 @@
 #!/usr/bin/env Rscript
 
+# Input
+source('/scratch/mjpete11/human_monkey_brain/mashr/kennys_example/_include_options.R')
+mash_results = readRDS('/scratch/mjpete11/human_monkey_brain/mashr/output/mashr_results.rds')
+
+# Output
+PLOT1 <- '/scratch/mjpete11/human_monkey_brain/mashr/output/beta_density.pdf'
+PLOT2 <- '/scratch/mjpete11/human_monkey_brain/mashr/output/gene_histogram.pdf'
+PLOT3 <- '/scratch/mjpete11/human_monkey_brain/mashr/output/upset.pdf'
+
+# Libraries
 library(tidyverse)
 library(ggplot2)
 library(RColorBrewer)
 library(reshape2)
 library(mashr)
+library(egg)
 
 #_____________________________________________________________________________
 # Read in files/ generate summary stats
 #_____________________________________________________________________________
-source('/scratch/mjpete11/human_monkey_brain/mashr/kennys_example/_include_options.R')
-
-mash_results = readRDS('/scratch/mjpete11/human_monkey_brain/mashr/output/mashr_results.rds')
 mash_beta = get_pm(mash_results)
 mash_sbet = get_pm(mash_results) / get_psd(mash_results)
 mash_lfsr = get_lfsr(mash_results)
 
 # Significant genes per region
 fsr_cutoff <- 0.2
-
-apply(mash_lfsr, 2, function(x) sum(x < fsr_cutoff))
  
 res <- apply(mash_lfsr, 2, function(x) x < fsr_cutoff)
-str(res)
 tmp <- split(res, rep(1:ncol(res), each = nrow(res)))
 # Get row index of sig genes per region
 tmp <- lapply(tmp, function(x) which(x))
 # Get list of genes that pass filtering in each region
 keep_genes <- lapply(tmp,function(i){row.names(mash_lfsr[i,])})
 names(keep_genes) <- colnames(mash_lfsr)
-str(keep_genes)
 
-# Write to file list of genes that past filtering in each region
 # First, reshape object (list of vectors of different lengths) into df
 n_obs <- sapply(keep_genes, length)
 seq_max <- seq_len(max(n_obs))
 mat <- sapply(keep_genes, "[", i=seq_max)
-dim(mat)
-mat[1:5,1:5]
-write.csv(mat, '/scratch/mjpete11/human_monkey_brain/mashr/output/keep_genes.csv')
-
-# How many genes are significant in n regions
-table(apply(mash_lfsr, 1, function(x) sum(x < fsr_cutoff)))
-
-# Genes that are significant in just one region
-apply(mash_lfsr[apply(mash_lfsr, 1, function(x) sum(x < fsr_cutoff)) == 1,], 2, function(x) sum(x < fsr_cutoff))
 
 #_____________________________________________________________________________
 # Plots 
@@ -64,7 +58,7 @@ p = ggplot(subset(b_mash,qval < fsr_cutoff),aes(beta,color=Var2)) +
 	guides(color = guide_legend(ncol = 2)) +
 	xlab(expression(italic(beta))) +
 	ylab('Density') 
-ggsave(p,file=paste0('/scratch/mjpete11/human_monkey_brain/mashr/output/plot1.pdf'),width=7,height=3,useDingbats=FALSE)
+ggsave(p,file=paste0(PLOT1),width=7,height=3,useDingbats=FALSE)
 
 p = ggplot(melt(tapply(b_mash$qval,b_mash$Var2,function(x) sum(x < fsr.cutoff,na.rm=TRUE))),aes(Var1,value,fill=Var1)) +
 	geom_bar(stat='identity') +
@@ -73,8 +67,7 @@ p = ggplot(melt(tapply(b_mash$qval,b_mash$Var2,function(x) sum(x < fsr.cutoff,na
 	theme(legend.position='none',axis.text.x=element_text(angle=-45,hjust=0,vjust=1)) +
 	xlab('Regions') +
 	ylab('Number of genes')
-ggsave(p,file=paste0('/scratch/mjpete11/human_monkey_brain/mashr/output/plot2.pdf'),width=7,height=3,useDingbats=FALSE)
-
+ggsave(p,file=paste0(PLOT2),width=7,height=3,useDingbats=FALSE)
 
 #_____________________________________________________________________________
 # Plot for poster 
@@ -240,8 +233,6 @@ p3 = ggplot(subset(meta.combinations.results.plot,chart=='count_decrease')) +
 	theme_classic(base_size=base.size) +
 	theme(axis.line.y=element_blank(),axis.ticks.y=element_blank(),axis.text.y=element_blank(),axis.title.y=element_blank())
 
-library(egg)
-
-pdf(file='/scratch/mjpete11/human_monkey_brain/mashr/output/plot3.pdf',useDingbats=FALSE,height=7,width=11)
+pdf(file=PLOT3,useDingbats=FALSE,height=7,width=11)
 	ggarrange(p3,p1,p2,ncol=3,nrow=1,widths=c(1,1,1),newpage=FALSE)
 dev.off()

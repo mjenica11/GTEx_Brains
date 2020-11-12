@@ -207,6 +207,7 @@ total_bias <- total_bias %>%
 		mutate(fem_ratio = female_upreg/male_upreg) %>%
 		mutate(male_ratio = male_upreg/female_upreg) %>%
 		mutate_if(is.numeric, ~round(., 3))
+
 #_____________________________________________________________________________ 
 # Correlation histogram
 #_____________________________________________________________________________ 
@@ -227,7 +228,6 @@ rownames(lcor) <- regions
 pdf(file = "/scratch/mjpete11/human_monkey_brain/mashr/output/heatmap1.pdf")
 corrplot(lcor, method="color", type="lower", tl.col="black", tl.cex=0.9)
 dev.off()
-
 
 #_____________________________________________________________________________ 
 # Write results
