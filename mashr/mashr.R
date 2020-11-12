@@ -1,9 +1,15 @@
 #!/usr/bin/env Rscript
 
-# Constants
-BASE <- "/scratch/mjpete11/human_monkey_brain"
+# Input
 METADATA <- file.path(BASE, "data/metadata/metadata.csv")
 COUNTS <- file.path(BASE, "data/expression_matrices/output/filtered_counts_with_sex_chr.csv")
+
+# Output
+M2_LIMMA <- "/scratch/mjpete11/human_monkey_brain/mashr/output/mashr_results.rds"
+LIMMA_SHARE <- "/scratch/mjpete11/human_monkey_brain/mashr/output/limma_share.csv"
+SIG_GENES <- "/scratch/mjpete11/human_monkey_brain/mashr/output/sig_genes.csv"
+BETA_LIMMA <- "/scratch/mjpete11/human_monkey_brain/mashr/output/beta_limma.csv"
+LFSR_LIMMA <- "/scratch/mjpete11/human_monkey_brain/mashr/output/lfsr_limma.csv"
 
 # load libraries
 library(mashr)
@@ -154,8 +160,8 @@ sig_genes <- data.frame(region = names(sig_genes), num_sig_genes = sig_genes)
 beta_limma <- as.data.frame(get_pm(m2_limma))
 
 # Write to file
-saveRDS(m2_limma, file = "/scratch/mjpete11/human_monkey_brain/mashr/output/mashr_results.rds")
-write.csv(limma_share, file = "/scratch/mjpete11/human_monkey_brain/mashr/output/limma_share.csv")
-write.csv(sig_genes, file = "/scratch/mjpete11/human_monkey_brain/mashr/output/sig_genes.csv", row.names = FALSE)
-write.csv(beta_limma, file = "/scratch/mjpete11/human_monkey_brain/mashr/output/beta_limma.csv")
-write.csv(lfsr_limma, file = "/scratch/mjpete11/human_monkey_brain/mashr/output/lfsr_limma.csv")
+saveRDS(m2_limma, file = M2_LIMMA)
+write.csv(limma_share, file = LIMMA_SHARE)
+write.csv(sig_genes, file = SIG_GENES, row.names = FALSE)
+write.csv(beta_limma, file = BETA_LIMMA)
+write.csv(lfsr_limma, file = LFSR_LIMMA)
