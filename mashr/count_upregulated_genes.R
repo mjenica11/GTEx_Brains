@@ -10,23 +10,26 @@ mash_beta = get_pm(mash_results)
 mash_lfsr = get_lfsr(mash_results)
 
 # Output
-FEMALE_UPREG <- "/scratch/mjpete11/human_monkey_brain/mashr/output/female_upregulated.csv"
-MALE_UPREG <- "/scratch/mjpete11/human_monkey_brain/mashr/output/male_upregulated.csv"
 
 #_______________________________________________________________________________
-# Generate tables listing the female- and male-biased genes
+# Make nested list to store genes that pass filtering threshold in each region
 #_______________________________________________________________________________
 # Significant if local false sign rate < 0.2 
-# Make nested list to store genes that pass filtering threshold in each region
-lfsr_df <- rownames_to_column(as.data.frame(mash_lfsr), var = "rowname")
-lfsr_df <- lfsr_df %>% relocate(rowname, .after = last_col())
+lfsr_df <- rownames_to_column(as.data.frame(mash_lfsr), var = "genes")
+
+# Move the gene column to the end
+lfsr_df <- lfsr_df %>% relocate(genes, .after = last_col())
+
+# Generate a nested list of genes that passed filter in each region
 regions <- colnames(mash_lfsr)
 keep_genes <- list()
 for (i in seq(1:11)){
-	keep_genes[[regions[[i]]]] <- with(lfsr_df, rowname[lfsr_df[, i] < 0.2])
+	keep_genes[[regions[[i]]]] <- with(lfsr_df, genes[lfsr_df[, i] < 0.2])
 }
 
+#_______________________________________________________________________________
 # Split effect size matrix into two; positive and negative values
+#_______________________________________________________________________________
 # Replace values that do not meet subsetting condition with NA
 male_upreg <- ifelse(mash_beta > 0, mash_beta, NA) 
 female_upreg <- ifelse(mash_beta < 0, mash_beta, NA) 
@@ -35,7 +38,10 @@ female_upreg <- ifelse(mash_beta < 0, mash_beta, NA)
 male_upreg <- apply(male_upreg, 2, as.list)
 female_upreg <- apply(female_upreg, 2, as.list)
 
-# Subset sex-biased genes to inlcude only genes that passed the filtering threshold
+#_______________________________________________________________________________
+# Subset sex-biased genes to inlcude only genes that passed the filtering
+# threshold in either direction 
+#_______________________________________________________________________________
 male_filtered <- list()
 for (i in seq(1:11)) {
 	male_filtered[[i]] <- male_upreg[[i]][keep_genes[[i]]]
@@ -54,10 +60,24 @@ female_filtered <- lapply(female_filtered, function(x) x[!is.na(x)])
 names(male_filtered) <- regions
 names(female_filtered) <- regions
 
-# Convert nested list to df
-male_filtered <- sapply(male_filtered, '[', seq(max(sapply(male_filtered,length))))
-female_filtered <- sapply(female_filtered, '[', seq(max(sapply(female_filtered,length))))
+#_______________________________________________________________________________
+# Reshape nested lists and write genes and betas for eacg region to a table
+#_______________________________________________________________________________
+# Make list of dfs from nested list
+nested_lst_to_df <- function(nested_lst, strings) {
+		dat <- stack(nested_lst, drop = FALSE)
+		dat <- dat[, c(2,1)]
+		col1 <- paste0(strings, "_genes")
+		col2 <- paste0(strings, "_beta")
+		colnames(dat) <- c(col1, col2)
+		return(dat)
+}
 
-# Write to file
-write.csv(male_filtered, MALE_UPREG)
-write.csv(female_filtered, FEMALE_UPREG)
+mlst <- Map(nested_lst_to_df, nested_lst = male_filtered, strings = regions)
+flst <- Map(nested_lst_to_df, nested_lst = female_filtered, strings = regions)
+
+# Write tables to file
+sapply(names(mlst), function(x) write.csv(mlst[[x]], 
+					file = paste0("/scratch/mjpete11/human_monkey_brain/mashr/male_gene_counts/", x, ".csv")))
+sapply(names(flst), function(x) write.csv(flst[[x]], 
+					file = paste0("/scratch/mjpete11/human_monkey_brain/mashr/female_gene_counts/", x, ".csv")))
