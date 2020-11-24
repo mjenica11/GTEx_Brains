@@ -128,7 +128,7 @@ rownames(res) <- NULL
 colnames(res) <- c('region', 'female_upreg', 'no_diff', 'male_upreg')
 
 #_____________________________________________________________________________ 
-# log2 ratio histogram
+# Odds ratio histogram
 #_____________________________________________________________________________ 
 # Is the proportion of sex biased genes the same across regions or is it
 # region specific?
@@ -170,12 +170,20 @@ dev.off()
 #_____________________________________________________________________________ 
 # Stacked bar plot 
 #_____________________________________________________________________________ 
+# Convert df to long format for plotting
 m.prop <- melt(data = prop[, c("region", "female_upreg", "male_upreg")], id.vars = "region", measure.vars = c("female_upreg", "male_upreg"))
+
+# Set levels to desired order (match order of odds-ratio plot)
+axis_order <- region.levels[c(10, 6, 3, 11, 1, 5, 4, 2, 8, 9, 7)]  
+
+# Convert region col to a factor and arrange rows to desired order
+m.prop <- m.prop %>% mutate(region = factor(region, levels = axis_order)) %>%
+				   arrange(region)
 
 p <- m.prop %>% ggplot(data = m.prop, mapping = aes(x = region, y = value, fill = variable)) +
 		geom_bar(aes(fill = variable), stat = "identity", color = "black", position = "dodge") +
 		scale_fill_manual(values = c("blue", "darkgreen")) +
-		theme(axis.text.x = element_text(angle = 50, vjust = 1, hjust=1)) +
+		theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust=1)) +
 		ylab("Number of sex-biased genes") +
 		xlab("Region")
 pdf(BAR_PLOT, width = 9)
