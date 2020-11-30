@@ -4,12 +4,18 @@
 library(tidyverse)
 library(mashr)
 
+# constants
+BASE <- "/scratch/mjpete11/human_monkey_brain/mashr/"
+
 # Input
-mash_results = readRDS('/scratch/mjpete11/human_monkey_brain/mashr/output/mashr_results.rds')
+mash_results = readRDS(paste0(BASE, "output/mashr_results.rds"))
 mash_beta = get_pm(mash_results)
 mash_lfsr = get_lfsr(mash_results)
 
 # Output
+# csvs of sDEGs in each region
+MALE <- "male_gene_counts/male_lst.rds"
+FEMALE <- "female_gene_counts/female_lst.rds"
 
 #_______________________________________________________________________________
 # Make nested list to store genes that pass filtering threshold in each region
@@ -60,6 +66,10 @@ female_filtered <- lapply(female_filtered, function(x) x[!is.na(x)])
 names(male_filtered) <- regions
 names(female_filtered) <- regions
 
+# Write nested lists to file
+saveRDS(male_filtered, paste0(BASE, MALE))
+saveRDS(female_filtered, paste0(BASE, FEMALE))
+
 #_______________________________________________________________________________
 # Reshape nested lists and write genes and betas for eacg region to a table
 #_______________________________________________________________________________
@@ -78,6 +88,6 @@ flst <- Map(nested_lst_to_df, nested_lst = female_filtered, strings = regions)
 
 # Write tables to file
 sapply(names(mlst), function(x) write.csv(mlst[[x]], 
-					file = paste0("/scratch/mjpete11/human_monkey_brain/mashr/male_gene_counts/", x, ".csv")))
+					file = paste0(BASE, "male_gene_counts/", x, ".csv")))
 sapply(names(flst), function(x) write.csv(flst[[x]], 
-					file = paste0("/scratch/mjpete11/human_monkey_brain/mashr/female_gene_counts/", x, ".csv")))
+					file = paste0(BASE, "female_gene_counts/", x, ".csv")))
